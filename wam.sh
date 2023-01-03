@@ -4,9 +4,6 @@ echo "WebAttackMitigator"
 # Prompt the user for the URL of the web server
 read -p "Enter the URL of the web server: " url
 
-# Extract the IP address from the URL
-ip_address=$(getent ahosts "${url%/*}" | awk '{print $1}')
-
 # Send a request to the web server
 response=$(curl -s "$url")
 
