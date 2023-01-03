@@ -50,3 +50,6 @@ else
                 # Check for a directory traversal attack
                 if curl -s --path-as-is "$url/../../../etc/passwd" | grep -q 'root'; then
                     echo 'Possible attack detected: Directory traversal attack detected.'
+                fi
+            fi
+        done
