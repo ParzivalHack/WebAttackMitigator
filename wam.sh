@@ -1,5 +1,5 @@
 #!/bin/bash
-
+toilet WAM - WebAttackMitigator
 # Prompt the user for the URL of the web server
 read -p "Enter the URL of the web server: " url
 
