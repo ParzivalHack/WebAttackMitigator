@@ -36,3 +36,19 @@ else
             if [[ "$(ethtool $interface 2>/dev/null | grep 'Link detected: yes')" ]]; then
                 # Check if the MAC address of the interface is different from the MAC address of the web server
                 mac_address=$(arping -I $interface -c 1 $ip_address | grep -o -E '([[:xdigit:]]{1,2}:){5}[[:xdigit:]]{1,2}')
+                if [ "$mac_address" != "$(arping -I $interface -c 1 $ip_address | grep -o -E '([[:xdigit:]]{1,2}:){5}[[:xdigit:]]{1,2}')" ]; then
+                    mitm_attack=true
+                    break
+                fi
+            fi
+        done
+        if $mitm_attack; then
+            echo 'Possible attack detected: MITM/sniffing attack detected.'
+        else
+            # Check for a DNS server hijacking or DNS amplification attack
+            if ! nslookup "$url" > /dev/null; then
+                echo 'Possible attack detected: DNS server hijacking or DNS amplification attack detected.'
+            else
+                # Check for a directory traversal attack
+                if curl -s --path-as-is "$url/../../../etc/passwd" | grep -q 'root'; then
+                    echo 'Possible attack detected: Directory traversal attack detected.'
