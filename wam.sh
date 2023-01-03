@@ -1,11 +1,17 @@
 #!/bin/bash
-$1 = echo -ne "Insert a website to test: "
+
+# Prompt the user for the URL of the web server
+read -p "Enter the URL of the web server: " url
+
+# Extract the IP address from the URL
+ip_address=$(getent ahosts "${url%/*}" | awk '{print $1}')
+
 # Send a request to the web server
-response=$(curl -s http://$1)
+response=$(curl -s "$url")
 
 # Check the response status code
 if [ "$?" -ne 0 ]; then
-    echo 'Error connecting to the web server.'
+    echo 'Possible attack detected: Error connecting to the web server.'
     exit 1
 fi
 
@@ -21,7 +27,7 @@ elif [[ "$response" =~ '%0D%0A' ]]; then
 else
     # If no attacks were detected, check for other types of attacks
     # Check for a Denial of Service (DoS) or Distributed Denial of Service (DDoS) attack
-    if nc -z -w 2 $1 80; then
+    if nc -z -w 2 $ip_address 80; then
         echo 'Possible attack detected: DoS/DDoS attack detected.'
     else
         # Check for a Man-in-the-Middle (MITM) or sniffing attack
@@ -29,17 +35,4 @@ else
         for interface in $(ifconfig | grep -o '^[^ ][^:]*:' | tr -d :); do
             if [[ "$(ethtool $interface 2>/dev/null | grep 'Link detected: yes')" ]]; then
                 # Check if the MAC address of the interface is different from the MAC address of the web server
-                mac_address=$(arping -I $interface -c 1 $1 | grep -o -E '([[:xdigit:]]{1,2}:){5}[[:xdigit:]]{1,2}')
-                if [ "$mac_address" != "$(arping -I $interface -c 1 $1 | grep -o -E '([[:xdigit:]]{1,2}:){5}[[:xdigit:]]{1,2}')" ]; then
-                    mitm_attack=true
-                    break
-                fi
-            fi
-        done
-        if $mitm_attack; then
-            echo 'Possible attack detected: MITM/sniffing attack detected.'
-        else
-            echo 'No attacks detected.'
-        fi
-    fi
-fi
+                mac_address=$(arping -I $interface -c 1 $ip_address | grep -o -E '([[:xdigit:]]{1,2}:){5}[[:xdigit:]]{1,2}')
