@@ -52,4 +52,3 @@ else
                     echo 'Possible attack detected: Directory traversal attack detected.'
                 fi
             fi
-done
