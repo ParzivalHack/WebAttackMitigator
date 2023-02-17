@@ -1,19 +1,18 @@
 #!/bin/bash
-toilet WAM
-echo "WebAttackMitigator"
-# Prompt the user for the URL of the web server
+
+# Prompt the user for the URL and IP address of the web server
 read -p "Enter the URL of the web server: " url
+read -p "Enter the IP address of the web server: " ip_address
 
-# Send a request to the web server
-response=$(curl -s "$url")
-
-# Check the response status code
-if [ "$?" -ne 0 ]; then
+# Send a request to the web server and log any errors
+curl -s -o curl_output.txt "$url"
+if [ $? -ne 0 ] || [ ! -s curl_output.txt ]; then
     echo 'Possible attack detected: Error connecting to the web server.'
     exit 1
 fi
 
 # Check the response for indications of an attack
+response=$(cat curl_output.txt)
 if [[ "$response" =~ '<script>' ]]; then
     echo 'Possible attack detected: Malicious script found in the website.'
 elif [[ "$response" =~ 'union select' ]]; then
@@ -44,7 +43,7 @@ else
             echo 'Possible attack detected: MITM/sniffing attack detected.'
         else
             # Check for a DNS server hijacking or DNS amplification attack
-            if ! nslookup "$url" > /dev/null; then
+            if ! nslookup "$ip_address" > /dev/null; then
                 echo 'Possible attack detected: DNS server hijacking or DNS amplification attack detected.'
             else
                 # Check for a directory traversal attack
@@ -55,3 +54,6 @@ else
         fi
     fi
 fi
+
+# Clean up the curl output file
+rm curl_output.txt
